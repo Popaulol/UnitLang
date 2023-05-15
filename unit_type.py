@@ -25,7 +25,7 @@ class Unit:
 
     @staticmethod
     def power_string(value: float) -> str:
-        if value.is_integer():
+        if isinstance(value, int) or value.is_integer():
             value = int(value)
         return "".join(
             {
@@ -40,7 +40,7 @@ class Unit:
                 "7": "⁷",
                 "8": "⁸",
                 "9": "⁹",
-                ".": "ˑ"
+                ".": "ˑ",
             }[digit]
             for digit in str(round(value, ROUNDING))
         )
@@ -112,38 +112,80 @@ class Unit:
         return self
 
 
-alias_map = {
-    Unit(s=-1): "Hz",
-    Unit(kg=1, m=1, s=-2): "N",
-    Unit(kg=1, m=2, s=-2): "J",
-    Unit(kg=1, m=2, s=-3): "W",
-    Unit(m=1, s=-1): "m/s",
-    Unit(m=1, s=-2): "m/s²",
-}
-
-
 @dataclass(frozen=True)
 class UnitType:
     value: float
     unit: Unit = Unit()
 
-    def __add__(self, other: UnitType) -> UnitType:
+    def __add__(self, other: UnitType | float | int) -> UnitType:
+        if isinstance(other, float) or isinstance(other, int):
+            return UnitType(self.value + other, self.unit)
         return UnitType(self.value + other.value, self.unit + other.unit)
 
     def __sub__(self, other: UnitType) -> UnitType:
         return UnitType(self.value - other.value, self.unit - other.unit)
 
-    def __mul__(self, other: UnitType) -> UnitType:
+    def __mul__(self, other: UnitType | float | int) -> UnitType:
+        if isinstance(other, float) or isinstance(other, int):
+            return UnitType(self.value * other, self.unit)
         return UnitType(self.value * other.value, self.unit * other.unit)
+
+    def __rmul__(self, other: UnitType | float | int) -> UnitType:
+        return self.__mul__(other)
 
     def __truediv__(self, other: UnitType) -> UnitType:
         return UnitType(self.value / other.value, self.unit / other.unit)
 
     def __pow__(self, power: float) -> UnitType:
-        return UnitType(self.value ** power, self.unit ** power)
+        return UnitType(self.value ** power, self.unit ** power)  # type: ignore
 
     def __neg__(self) -> UnitType:
         return UnitType(-self.value, self.unit)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{round(self.value, ROUNDING)} {str(self.unit)}"
+
+    def __repr__(self) -> str:
+        return f"{round(self.value, ROUNDING)} {str(self.unit)}"
+
+
+alias_map = {
+    Unit(s=1): "s",
+    Unit(kg=1): "kg",
+    Unit(m=1): "m",
+    Unit(A=1): "A",
+    Unit(mol=1): "mol",
+    Unit(cd=1): "cd",
+    Unit(K=1): "K",
+    Unit(s=-1): "Hz",
+    Unit(kg=1, m=1, s=-2): "N",
+    Unit(m=-1, kg=1, s=-2): "Pa",
+    Unit(kg=1, m=2, s=-2): "J",
+    Unit(kg=1, m=2, s=-3): "W",
+    Unit(s=1, A=1): "C",
+    Unit(m=2, kg=1, s=-3, A=-1): "V",
+    Unit(m=-2, kg=-1, s=4, A=2): "F",
+    Unit(m=2, kg=1, s=-3, A=-2): "Ω",
+    Unit(m=-2, kg=-1, s=3, A=2): "S",
+    Unit(m=2, kg=1, s=-2, A=-1): "Wb",
+    Unit(kg=1, s=-2, A=-1): "T",
+    Unit(m=2, kg=1, s=-2, A=-2): "H",
+    Unit(m=-2, cd=1): "lx",
+    Unit(m=2, s=-2): "Sv",
+    Unit(s=-1, mol=1): "kat",
+    Unit(m=1, s=-1): "m/s",
+    Unit(m=1, s=-2): "m/s²",
+    Unit(kg=1, m=-3): "kg/m³",
+}
+
+for unit, symbol in alias_map.items():
+    globals()[symbol] = UnitType(1, unit)  # type: ignore
+
+if __name__ == "__main__":
+    import code
+    from math import *
+
+    tau = 2 * pi
+    g = 9.81
+
+    code.interact(local=locals())  # type: ignore
