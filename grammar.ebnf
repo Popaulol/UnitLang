@@ -1,0 +1,112 @@
+@@grammar::UnitLang
+
+start
+    =
+    | command
+    | expression $
+    ;
+
+command::COMMAND
+    =
+    | cmd:'evaluate' expression:expression
+    | cmd:'exclude' expression:expression
+    | cmd:'render' path:path
+    | cmd:'exit'
+    | cmd:'quit'
+    ;
+
+path
+    =
+    /(?!\d)\w+/ + /(?:::(?!\d)\w+)+/
+    ;
+
+expression
+    =
+    | addition
+    | subtraction
+    | term
+    ;
+
+
+addition::Add
+    =
+    left:term op:'+' ~ right:expression
+    ;
+
+
+subtraction::Subtract
+    =
+    left:term op:'-' ~ right:expression
+    ;
+
+
+term
+    =
+    | multiplication
+    | division
+    | factor
+    ;
+
+
+multiplication::Multiply
+    =
+    left:factor op:'*' ~ right:term
+    ;
+
+
+division::Divide
+    =
+    left:factor '/' ~ right:term
+    ;
+
+
+factor
+    =
+    | inversion
+    | unary
+    ;
+
+inversion::Invert
+    =
+    '-' ~ value:factor
+    ;
+
+unary
+    =
+    | exponentiation
+    | power
+    ;
+
+exponentiation::Exponentiate
+    =
+    base:power ('*' '*' | '^') ~ exponent:unary
+    ;
+
+power
+    =
+    | subexpression
+    | unit_number
+    ;
+
+
+subexpression
+    =
+    '(' ~ @:expression ')'
+    ;
+
+unit_number::Unit_number
+    =
+    | value:NUMBER unit:UNIT
+    | value:NUMBER
+    ;
+
+UNIT::Unit
+    =
+    {{/[a-z]/ | /[A-Z]/}+ [NUMBER]}*
+    ;
+
+
+NUMBER::Number
+    =
+    /[-+]?[0-9]*\.?[0-9]*/
+    ;
