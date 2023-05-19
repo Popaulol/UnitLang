@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import string
 from dataclasses import dataclass
 
 ROUNDING = 2
@@ -14,14 +16,36 @@ class Unit:
     cd: float = 0
     K: float = 0
 
-    @classmethod
-    def from_string(cls, s: str, /) -> Unit:
-        assert s in alias_map.values()
+    @staticmethod
+    def get_alias(s: str, /) -> Unit:
+        assert s in alias_map.values(), s
         for key, value in alias_map.items():
             if value == s:
                 return key
-
         assert False
+
+    @classmethod
+    def from_string(cls, s: str, /) -> Unit:
+        if s in alias_map.values():
+            return cls.get_alias(s)
+
+        curr_unit = cls()
+
+        curr = 0
+        while curr < len(s):
+            unit_string = ""
+            while curr < len(s) and s[curr] in string.ascii_letters:
+                unit_string = unit_string + s[curr]
+                curr += 1
+
+            number_string = ""
+            while curr < len(s) and s[curr] not in string.ascii_letters:
+                number_string = number_string + s[curr]
+                curr += 1
+
+            curr_unit *= cls.get_alias(unit_string) ** float(number_string)
+
+        return curr_unit
 
     @staticmethod
     def power_string(value: float) -> str:
@@ -114,8 +138,12 @@ class Unit:
 
 @dataclass(frozen=True)
 class UnitType:
-    value: float
+    value: float | int = 0.0
     unit: Unit = Unit()
+
+    def __post_init__(self) -> None:
+        assert isinstance(self.value, float) or isinstance(self.value, int)
+        assert isinstance(self.unit, Unit)
 
     def __add__(self, other: UnitType | float | int) -> UnitType:
         if isinstance(other, float) or isinstance(other, int):
@@ -125,9 +153,11 @@ class UnitType:
     def __sub__(self, other: UnitType) -> UnitType:
         return UnitType(self.value - other.value, self.unit - other.unit)
 
-    def __mul__(self, other: UnitType | float | int) -> UnitType:
+    def __mul__(self, other: UnitType | float | int | Unit) -> UnitType:
         if isinstance(other, float) or isinstance(other, int):
             return UnitType(self.value * other, self.unit)
+        elif isinstance(other, Unit):
+            return UnitType(self.value, self.unit * other)
         return UnitType(self.value * other.value, self.unit * other.unit)
 
     def __rmul__(self, other: UnitType | float | int) -> UnitType:
@@ -136,8 +166,11 @@ class UnitType:
     def __truediv__(self, other: UnitType) -> UnitType:
         return UnitType(self.value / other.value, self.unit / other.unit)
 
-    def __pow__(self, power: float) -> UnitType:
-        return UnitType(self.value ** power, self.unit ** power)  # type: ignore
+    def __pow__(self, power: float | UnitType) -> UnitType:
+        if isinstance(power, UnitType):
+            assert power.unit == Unit()
+            power = power.value
+        return UnitType(self.value**power, self.unit**power)  # type: ignore
 
     def __neg__(self) -> UnitType:
         return UnitType(-self.value, self.unit)
@@ -150,6 +183,7 @@ class UnitType:
 
 
 alias_map = {
+    Unit(): "",
     Unit(s=1): "s",
     Unit(kg=1): "kg",
     Unit(m=1): "m",
@@ -183,9 +217,9 @@ for unit, symbol in alias_map.items():
 
 if __name__ == "__main__":
     import code
-    from math import *
+    from math import *  # noqa: F403
 
-    tau = 2 * pi
+    tau = 2 * pi  # noqa: F405
     g = 9.81
 
     code.interact(local=locals())  # type: ignore
