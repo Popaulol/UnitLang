@@ -181,6 +181,9 @@ class UnitType:
     def __repr__(self) -> str:
         return f"{round(self.value, ROUNDING)} {str(self.unit)}"
 
+    def __abs__(self) -> UnitType:
+        return UnitType(abs(self.value), self.unit)
+
 
 alias_map = {
     Unit(): "",
