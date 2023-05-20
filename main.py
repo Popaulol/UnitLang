@@ -30,13 +30,21 @@ def main() -> None:
         GRAMMAR = f.read()
 
     parser = tatsu.compile(GRAMMAR, asmodel=True)
+    interpreter = Interpreter()
 
     while True:
         model = parser.parse(input(">>> "))
         print(json.dumps(asjson(model), indent=4))
         pprint(model)
-        result = Interpreter().walk(model)
-        print(result)
+
+        # with open("ast.dot", "w") as f:
+        #    f.write("digraph {\n")
+        #    f.write(AstRenderer().walk(model))
+        #    f.write("}")
+        #
+        result = interpreter.walk(model)
+        if result is not None:
+            print(result)
         run_commands.append(Line(model, result))
 
 

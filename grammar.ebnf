@@ -2,7 +2,9 @@
 
 start
     =
-    | command
+    | command $
+    | function_definition $
+    | variable_definition $
     | expression $
     ;
 
@@ -18,6 +20,14 @@ command::COMMAND
 path
     =
     /(?!\d)\w+/ + /(?:::(?!\d)\w+)+/
+    ;
+
+function_definition::FunctionDefinition
+    = name:identifier '(' args:[definition_argument_list] ')' '=' ~ expression:expression
+    ;
+
+variable_definition::VariableDefinition
+    = name:identifier '=' ~ expression:expression
     ;
 
 expression
@@ -85,6 +95,9 @@ exponentiation::Exponentiate
 power
     =
     | subexpression
+    | abs
+    | call
+    | access
     | unit_number
     ;
 
@@ -92,6 +105,30 @@ power
 subexpression
     =
     '(' ~ @:expression ')'
+    ;
+
+call::Call
+    =
+    function:identifier '(' ~ args:[call_argument_list] ')'
+    ;
+
+call_argument_list
+    =
+    @:expression {',' @:expression}*
+    ;
+
+definition_argument_list::Definition_argument_list
+    =
+    first:identifier rest:{',' identifier}*
+    ;
+
+access::Access
+    = name:identifier
+    ;
+
+abs::Absolute
+    =
+    '|' ~ expr:expression '|'
     ;
 
 unit_number::Unit_number
@@ -103,6 +140,12 @@ unit_number::Unit_number
 UNIT::Unit
     =
     {{/[a-z]/ | /[A-Z]/}+ [NUMBER]}*
+    ;
+
+
+identifier::Ident
+    =
+    first:(/[a-z]/ | /[A-Z]/ | '_') rest:{/[a-z]/ | /[A-Z]/ | '_' | /[0-9]/}*
     ;
 
 
