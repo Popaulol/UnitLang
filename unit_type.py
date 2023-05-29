@@ -135,6 +135,36 @@ class Unit:
     def __neg__(self) -> Unit:
         return self
 
+    def to_latex(self) -> str:
+        # THE CODE IN THIS METHOD WAS GENEROUSLY IMPROVED BY TARDIInsanity#4196
+        if self in alias_map:
+            return alias_map[self]
+        pairs = [
+            ("s", self.s),
+            ("kg", self.kg),
+            ("m", self.m),
+            ("A", self.A),
+            ("mol", self.mol),
+            ("cd", self.cd),
+            ("K", self.K),
+        ]
+        top = " ".join(
+            symbol if value == 1 else rf"{{ {symbol} }}^{{{value} }}"
+            for symbol, value in pairs
+            if value > 0
+        )
+        bottom = " ".join(
+            symbol if abs(value) == 1 else rf"{{ {symbol} }}^{{{abs(value)} }}"
+            for symbol, value in pairs
+            if value < 0
+        )
+        if bottom:
+            if not top:
+                top = "1"
+            return rf"\frac{{ {top} }}{{ {bottom} }}"
+        else:
+            return top
+
 
 @dataclass(frozen=True)
 class UnitType:
@@ -184,6 +214,9 @@ class UnitType:
     def __abs__(self) -> UnitType:
         return UnitType(abs(self.value), self.unit)
 
+    def to_latex(self) -> str:
+        return rf"{self.value} {self.unit.to_latex()}"
+
 
 alias_map = {
     Unit(): "",
@@ -210,9 +243,6 @@ alias_map = {
     Unit(m=-2, cd=1): "lx",
     Unit(m=2, s=-2): "Sv",
     Unit(s=-1, mol=1): "kat",
-    Unit(m=1, s=-1): "m/s",
-    Unit(m=1, s=-2): "m/s²",
-    Unit(kg=1, m=-3): "kg/m³",
 }
 
 for unit, symbol in alias_map.items():
