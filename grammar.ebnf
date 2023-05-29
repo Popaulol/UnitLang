@@ -10,16 +10,17 @@ start
 
 command::COMMAND
     =
-    | cmd:'evaluate' expression:expression
-    | cmd:'exclude' expression:expression
-    | cmd:'render' path:path
+    | cmd:'evaluate' ~ expression:expression
+    | cmd:'exclude' ~ expression:expression
+    | cmd:'render' ~ path:path
     | cmd:'exit'
     | cmd:'quit'
+    | cmd:'newline'
     ;
 
 path
     =
-    /(?!\d)\w+/ + /(?:::(?!\d)\w+)+/
+    /.+/
     ;
 
 function_definition::FunctionDefinition
@@ -102,9 +103,9 @@ power
     ;
 
 
-subexpression
+subexpression::Subexpression
     =
-    '(' ~ @:expression ')'
+    '(' ~ expr:expression ')'
     ;
 
 call::Call

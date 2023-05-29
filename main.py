@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 import json
 from pprint import pprint
@@ -8,8 +9,9 @@ from typing import Any
 import tatsu
 from tatsu.util import asjson
 
+import LaTeX_renderer
 import unit_type
-from interpreter import Interpreter
+from interpreter import RENDER, Interpreter
 
 # "1m10N100mol2K-3459cd-56V-23 * -(3 + 5 * ( 10 - 100**(-0.5) ))"
 
@@ -42,10 +44,27 @@ def main() -> None:
         #    f.write(AstRenderer().walk(model))
         #    f.write("}")
         #
+        to_be_saved = copy.deepcopy(model)
         result = interpreter.walk(model)
-        if result is not None:
+        run_commands.append(Line(to_be_saved, result))
+        pprint(run_commands)
+        if isinstance(result, RENDER):
+            latex_render = LaTeX_renderer.Renderer()
+            with open(result.path, "w") as f:
+                f.write("\\begin{align}\n")
+                for line in run_commands:
+                    latex = latex_render.walk(line.model)
+                    if latex is not None:
+                        f.write(latex)
+                        if line.result is not None and not isinstance(
+                            line.result, RENDER
+                        ):
+                            f.write(" &=& ")
+                            f.write(line.result.to_latex())
+                        f.write("\\\\\n")
+                f.write(r"\end{align}")
+        elif result is not None:
             print(result)
-        run_commands.append(Line(model, result))
 
 
 if __name__ == "__main__":
